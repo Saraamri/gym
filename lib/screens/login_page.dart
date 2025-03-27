@@ -38,11 +38,8 @@ class _LoginPageState extends State<LoginPage> {
         body: Stack(
           fit: StackFit.expand,
           children: [
-            // Image de fond
-            Image.asset(
-              "assets/images/download.jpg", // Remplace par ton image
-              fit: BoxFit.cover,
-            ),
+          
+           
 
             // Fond semi-transparent
             Container(

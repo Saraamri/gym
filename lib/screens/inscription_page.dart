@@ -11,9 +11,11 @@ class InscriptionPage extends StatefulWidget {
 class _InscriptionPageState extends State<InscriptionPage> {
   late TextEditingController _nomController;
   late TextEditingController _prenomController;
+  late TextEditingController _ageController;
   late TextEditingController _emailController;
   late TextEditingController _passwordController;
   late TextEditingController _specialiteController;
+
   late GlobalKey<FormState> _formKey;
   bool _isObscure = true;
   String _role = 'Adherent'; // Valeur par défaut : Adhérent
@@ -23,6 +25,7 @@ class _InscriptionPageState extends State<InscriptionPage> {
     super.initState();
     _nomController = TextEditingController();
     _prenomController = TextEditingController();
+    _ageController = TextEditingController();
     _emailController = TextEditingController();
     _passwordController = TextEditingController();
     _specialiteController = TextEditingController();
@@ -33,6 +36,7 @@ class _InscriptionPageState extends State<InscriptionPage> {
   void dispose() {
     _nomController.dispose();
     _prenomController.dispose();
+    _ageController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _specialiteController.dispose();
@@ -51,32 +55,61 @@ class _InscriptionPageState extends State<InscriptionPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Formulaire d'inscription
-                TextFormField(
-                  controller: _nomController,
-                  decoration: InputDecoration(
-                    hintText: "Nom",
-                    hintStyle: TextStyle(color: Colors.black54, fontSize: 18),
-                    prefixIcon: Icon(Icons.person_outline, color: Colors.black54),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide(color: Colors.black.withOpacity(0.3)),
+                // Formulaire d'inscription avec nom et prénom côte à côte
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _nomController,
+                        decoration: InputDecoration(
+                          hintText: "Nom",
+                          hintStyle: TextStyle(color: Colors.black54, fontSize: 18),
+                          prefixIcon: Icon(Icons.person_outline, color: Colors.black54),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide(color: Colors.black.withOpacity(0.3)),
+                          ),
+                        ),
+                        style: TextStyle(color: Colors.black, fontSize: 18),
+                        validator: MultiValidator([
+                          RequiredValidator(errorText: "Nom requis"),
+                          PatternValidator(r'^[a-zA-ZÀ-ÿ\s]+$', errorText: "Nom invalide (lettres uniquement)"),
+                        ]),
+                      ),
                     ),
-                  ),
-                  style: TextStyle(color: Colors.black, fontSize: 18),
-                  validator:MultiValidator([
-RequiredValidator(errorText: "Nom requis"),
-    PatternValidator(r'^[a-zA-ZÀ-ÿ\s]+$', errorText: "Nom invalide (lettres uniquement)"),
-                  ]) 
+                    SizedBox(width: 10), // Espace entre les champs Nom et Prénom
+                    Expanded(
+                      child: TextFormField(
+                        controller: _prenomController,
+                        decoration: InputDecoration(
+                          hintText: "Prénom",
+                          hintStyle: TextStyle(color: Colors.black54, fontSize: 18),
+                          prefixIcon: Icon(Icons.person_outline, color: Colors.black54),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide(color: Colors.black.withOpacity(0.3)),
+                          ),
+                        ),
+                        style: TextStyle(color: Colors.black, fontSize: 18),
+                        validator: MultiValidator([
+                          RequiredValidator(errorText: "Prénom requis"),
+                          PatternValidator(r'^[a-zA-ZÀ-ÿ\s]+$', errorText: "Prénom invalide (lettres uniquement)"),
+                        ]),
+                      ),
+                    ),
+                  ],
                 ),
                 SizedBox(height: 20),
 
+                // Champ Âge
                 TextFormField(
-                  controller: _prenomController,
+                  controller: _ageController,
+                  keyboardType: TextInputType.number, // Permet d'entrer des nombres
                   decoration: InputDecoration(
-                    hintText: "Prénom",
+                    hintText: "Âge",
                     hintStyle: TextStyle(color: Colors.black54, fontSize: 18),
-                    prefixIcon: Icon(Icons.person_outline, color: Colors.black54),
+                    prefixIcon: Icon(Icons.cake_outlined, color: Colors.black54),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(15),
                       borderSide: BorderSide(color: Colors.black.withOpacity(0.3)),
@@ -84,12 +117,14 @@ RequiredValidator(errorText: "Nom requis"),
                   ),
                   style: TextStyle(color: Colors.black, fontSize: 18),
                   validator: MultiValidator([
-RequiredValidator(errorText: "Prénom requis"),
-PatternValidator(r'^[a-zA-ZÀ-ÿ\s]+$', errorText: "Prénom invalide (lettres uniquement)"),
-                
-                  ]),), 
+                    RequiredValidator(errorText: "Âge requis"),
+                    PatternValidator(r'^[0-9]+$', errorText: "L'âge doit être un nombre entier"),
+                    RangeValidator(min: 18, max: 100, errorText: "L'âge doit être compris entre 18 et 100 ans"),
+                  ]),
+                ),
                 SizedBox(height: 20),
 
+                // Champ Email
                 TextFormField(
                   controller: _emailController,
                   decoration: InputDecoration(
@@ -104,14 +139,12 @@ PatternValidator(r'^[a-zA-ZÀ-ÿ\s]+$', errorText: "Prénom invalide (lettres un
                   style: TextStyle(color: Colors.black, fontSize: 18),
                   validator: MultiValidator([
                     RequiredValidator(errorText: "Email requis"),
-  PatternValidator(
-      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-      errorText: "Entrez un email valide (ex: exemple@mail.com)",
-    ),
+                    PatternValidator(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', errorText: "Entrez un email valide (ex: exemple@mail.com)"),
                   ]),
                 ),
                 SizedBox(height: 20),
 
+                // Champ Mot de passe
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _isObscure,
@@ -199,6 +232,7 @@ PatternValidator(r'^[a-zA-ZÀ-ÿ\s]+$', errorText: "Prénom invalide (lettres un
                       if (_formKey.currentState!.validate()) {
                         // Code d'inscription à ajouter ici (envoi vers le backend, etc.)
                         print("Inscription réussie");
+                         Navigator.pushReplacementNamed(context, '/RoutesPage');
                       } else {
                         print("Échec de l'inscription");
                       }
