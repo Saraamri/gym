@@ -6,64 +6,125 @@ class AccueilPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Container(
-          // Utilisation de l'image en arrière-plan
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/images/gym2.jpg'), // Image de fond
-              fit: BoxFit.cover, // Remplir tout l'écran
+      body: Stack(
+        children: [
+          // Image de fond avec effet sombre
+          Container(
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/fitness.jpg'),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                  Colors.black.withOpacity(0.6),
+                  BlendMode.darken,
+                ),
+              ),
             ),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Message de bienvenue
-                Text(
-                  'Rejoignez notre communauté et atteignez vos objectifs de santé et bien-être avec nous!',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    height: 1.5,
-                    shadows: [
-                      Shadow(
-                        blurRadius: 10.0,
-                        color: Colors.black.withOpacity(0.6),
-                        offset: Offset(3.0, 3.0),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20),
 
-                // Espace avant le bouton
-                SizedBox(height: 40),
-
-                // Bouton Join Us
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/LoginPage');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color.fromARGB(255, 195, 195, 242),
-                    padding: EdgeInsets.symmetric(vertical: 15, horizontal: 120),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+          // Contenu principal
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end, // Alignement à droite
+                children: [
+                  // Bouton "Join Us" en haut à droite
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: _buildButton(
+                      text: "Join Us",
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/LoginPage');
+                      },
+                      color: Colors.white,
+                      textColor: Colors.black,
                     ),
                   ),
-                  child: Text(
-                    'Join Us',
-                    style: TextStyle(fontSize: 18),
+                  SizedBox(height: 80),
+
+                  // Titre et sous-titre
+                  Text(
+                    "Transformez votre corps,\nChangez votre vie.",
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      height: 1.5,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 8.0,
+                          color: Colors.black.withOpacity(0.5),
+                          offset: Offset(2, 2),
+                        ),
+                      ],
+                    ),
+                    textAlign: TextAlign.right, // Alignement du texte à droite
                   ),
-                ),
-              ],
+                  SizedBox(height: 10),
+                  Text(
+                    "Rejoignez notre communauté et atteignez vos objectifs fitness avec nos experts.",
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.white70,
+                    ),
+                    textAlign: TextAlign.right, // Alignement du texte à droite
+                  ),
+                  SizedBox(height: 40),
+
+                  // Mots-clés inspirants alignés à droite
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      _buildKeyword("🔥 Santé"),
+                      _buildKeyword("🏆 Performance"),
+                      _buildKeyword("💪 Motivation"),
+                      _buildKeyword("🧘 Bien-être"),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  // Fonction pour afficher les mots-clés inspirants
+  Widget _buildKeyword(String keyword) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        keyword,
+        style: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
         ),
+      ),
+    );
+  }
+
+  // Fonction pour construire un bouton
+  Widget _buildButton({
+    required String text,
+    required VoidCallback onPressed,
+    required Color color,
+    required Color textColor,
+  }) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 25),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
+        ),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 18, color: textColor),
       ),
     );
   }
