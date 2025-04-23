@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:form_field_validator/form_field_validator.dart';
+import 'package:form_field_validator/form_field_validator.dart' as f;
+import 'package:gymaccess/services/authservice.dart';
 
 class InscriptionPage extends StatefulWidget {
   const InscriptionPage({super.key});
@@ -9,245 +10,262 @@ class InscriptionPage extends StatefulWidget {
 }
 
 class _InscriptionPageState extends State<InscriptionPage> {
-  late TextEditingController _nomController;
-  late TextEditingController _prenomController;
-  late TextEditingController _ageController;
-  late TextEditingController _emailController;
-  late TextEditingController _passwordController;
-  late TextEditingController _specialiteController;
+  final _formKey = GlobalKey<FormState>();
 
-  late GlobalKey<FormState> _formKey;
+  // Contrôleurs correspondant aux attributs de UserEntity
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confPasswordController = TextEditingController();
+  final _telephoneController = TextEditingController();
+  final _ageController = TextEditingController();
+  final _adresseController = TextEditingController();
+  final _profilePictureController = TextEditingController();
+  final _specialiteController = TextEditingController();
+
   bool _isObscure = true;
-  String _role = 'Adherent'; // Valeur par défaut : Adhérent
-
-  @override
-  void initState() {
-    super.initState();
-    _nomController = TextEditingController();
-    _prenomController = TextEditingController();
-    _ageController = TextEditingController();
-    _emailController = TextEditingController();
-    _passwordController = TextEditingController();
-    _specialiteController = TextEditingController();
-    _formKey = GlobalKey<FormState>();
-  }
+  String _role = 'ADHERENT';
 
   @override
   void dispose() {
-    _nomController.dispose();
-    _prenomController.dispose();
-    _ageController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
+    _confPasswordController.dispose();
+    _telephoneController.dispose();
+    _ageController.dispose();
+    _adresseController.dispose();
+    _profilePictureController.dispose();
     _specialiteController.dispose();
     super.dispose();
   }
+
+  Widget _buildField({
+    required String hint,
+    required TextEditingController controller,
+    IconData? icon,
+    TextInputType keyboardType = TextInputType.text,
+    bool obscureText = false,
+    f.FormFieldValidator<String>? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      validator: validator,
+      decoration: InputDecoration(
+        hintText: hint,
+        prefixIcon: icon != null ? Icon(icon, color: Colors.black54) : null,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: Colors.black.withOpacity(0.3)),
+        ),
+      ),
+    );
+  }
+void _submitForm() async {
+  if (_formKey.currentState!.validate()) {
+    try {
+      String message = await AuthService().register(
+        firstName: _firstNameController.text,
+        lastName: _lastNameController.text,
+        email: _emailController.text,
+        username: _usernameController.text,
+        password: _passwordController.text,
+        confPassword: _confPasswordController.text,
+        specialite: _role == 'COACH' ? _specialiteController.text : null,
+        telephone: _telephoneController.text,
+        age: double.parse(_ageController.text),
+        adresse: _adresseController.text,
+        profilePicture: _profilePictureController.text,
+        role:_role, 
+ 
+      );
+
+      print(message);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      Navigator.pushReplacementNamed(context, '/LoginPage');
+    } catch (e) {
+      print(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur : $e")));
+    }
+  } else {
+    print("Échec de l'inscription");
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        backgroundColor: Colors.white, // Fond blanc
+        backgroundColor: Colors.white,
         body: Padding(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+            child: ListView(
               children: [
-                // Formulaire d'inscription avec nom et prénom côte à côte
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: TextFormField(
-                        controller: _nomController,
-                        decoration: InputDecoration(
-                          hintText: "Nom",
-                          hintStyle: TextStyle(color: Colors.black54, fontSize: 18),
-                          prefixIcon: Icon(Icons.person_outline, color: Colors.black54),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            borderSide: BorderSide(color: Colors.black.withOpacity(0.3)),
-                          ),
-                        ),
-                        style: TextStyle(color: Colors.black, fontSize: 18),
-                        validator: MultiValidator([
-                          RequiredValidator(errorText: "Nom requis"),
-                          PatternValidator(r'^[a-zA-ZÀ-ÿ\s]+$', errorText: "Nom invalide (lettres uniquement)"),
-                        ]),
+                      child: _buildField(
+                        hint: "Nom",
+                        controller: _lastNameController,
+                        icon: Icons.person_outline,
+                        validator: f.RequiredValidator(errorText: "Nom requis"),
                       ),
                     ),
-                    SizedBox(width: 10), // Espace entre les champs Nom et Prénom
+                    const SizedBox(width: 10),
                     Expanded(
-                      child: TextFormField(
-                        controller: _prenomController,
-                        decoration: InputDecoration(
-                          hintText: "Prénom",
-                          hintStyle: TextStyle(color: Colors.black54, fontSize: 18),
-                          prefixIcon: Icon(Icons.person_outline, color: Colors.black54),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            borderSide: BorderSide(color: Colors.black.withOpacity(0.3)),
-                          ),
-                        ),
-                        style: TextStyle(color: Colors.black, fontSize: 18),
-                        validator: MultiValidator([
-                          RequiredValidator(errorText: "Prénom requis"),
-                          PatternValidator(r'^[a-zA-ZÀ-ÿ\s]+$', errorText: "Prénom invalide (lettres uniquement)"),
-                        ]),
+                      child: _buildField(
+                        hint: "Prénom",
+                        controller: _firstNameController,
+                        icon: Icons.person_outline,
+                        validator: f.RequiredValidator(errorText: "Prénom requis"),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 15),
 
-                // Champ Âge
-                TextFormField(
-                  controller: _ageController,
-                  keyboardType: TextInputType.number, // Permet d'entrer des nombres
-                  decoration: InputDecoration(
-                    hintText: "Âge",
-                    hintStyle: TextStyle(color: Colors.black54, fontSize: 18),
-                    prefixIcon: Icon(Icons.cake_outlined, color: Colors.black54),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide(color: Colors.black.withOpacity(0.3)),
-                    ),
-                  ),
-                  style: TextStyle(color: Colors.black, fontSize: 18),
-                  validator: MultiValidator([
-                    RequiredValidator(errorText: "Âge requis"),
-                    PatternValidator(r'^[0-9]+$', errorText: "L'âge doit être un nombre entier"),
-                    RangeValidator(min: 18, max: 100, errorText: "L'âge doit être compris entre 18 et 100 ans"),
-                  ]),
-                ),
-                SizedBox(height: 20),
-
-                // Champ Email
-                TextFormField(
+                _buildField(
+                  hint: "Email",
                   controller: _emailController,
-                  decoration: InputDecoration(
-                    hintText: "Adresse email",
-                    hintStyle: TextStyle(color: Colors.black54, fontSize: 18),
-                    prefixIcon: Icon(Icons.email_outlined, color: Colors.black54),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide(color: Colors.black.withOpacity(0.3)),
-                    ),
-                  ),
-                  style: TextStyle(color: Colors.black, fontSize: 18),
-                  validator: MultiValidator([
-                    RequiredValidator(errorText: "Email requis"),
-                    PatternValidator(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', errorText: "Entrez un email valide (ex: exemple@mail.com)"),
+                  icon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: f.MultiValidator([
+                    f.RequiredValidator(errorText: "Email requis"),
+                    f.EmailValidator(errorText: "Email invalide"),
                   ]),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 15),
 
-                // Champ Mot de passe
-                TextFormField(
+                _buildField(
+                  hint: "Nom d'utilisateur",
+                  controller: _usernameController,
+                  icon: Icons.person,
+                  validator: f.MultiValidator([
+                    f.RequiredValidator(errorText: "Nom d'utilisateur requis"),
+                    f.MinLengthValidator(5, errorText: "Minimum 5 caractères"),
+                    f.MaxLengthValidator(15, errorText: "Maximum 15 caractères"),
+                  ]),
+                ),
+                const SizedBox(height: 15),
+
+                _buildField(
+                  hint: "Mot de passe",
                   controller: _passwordController,
+                  icon: Icons.lock_outline,
                   obscureText: _isObscure,
-                  decoration: InputDecoration(
-                    hintText: "Mot de passe",
-                    hintStyle: TextStyle(color: Colors.black54, fontSize: 18),
-                    prefixIcon: Icon(Icons.lock_outline, color: Colors.black54),
-                    suffixIcon: IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _isObscure = !_isObscure;
-                        });
-                      },
-                      icon: Icon(
-                        _isObscure ? Icons.visibility_off : Icons.visibility,
-                        color: Colors.black54,
-                      ),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide(color: Colors.black.withOpacity(0.3)),
-                    ),
-                  ),
-                  style: TextStyle(color: Colors.black, fontSize: 18),
-                  validator: MultiValidator([
-                    RequiredValidator(errorText: 'Mot de passe requis'),
-                    MinLengthValidator(8, errorText: 'Minimum 8 caractères'),
-                    MaxLengthValidator(15, errorText: 'Maximum 15 caractères'),
+                  validator: f.MultiValidator([
+                    f.RequiredValidator(errorText: "Mot de passe requis"),
+                    f.MinLengthValidator(8, errorText: "Minimum 8 caractères"),
                   ]),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 15),
 
-                // Choix du rôle (Adhérent ou Coach)
+                _buildField(
+                  hint: "Confirmer mot de passe",
+                  controller: _confPasswordController,
+                  icon: Icons.lock_outline,
+                  obscureText: true,
+                  validator: (val) {
+                    if (val == null || val.isEmpty) {
+                      return "Confirmer le mot de passe";
+                    } else if (val != _passwordController.text) {
+                      return "Les mots de passe ne correspondent pas";
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 15),
+
+                _buildField(
+                  hint: "Téléphone (8 chiffres)",
+                  controller: _telephoneController,
+                  icon: Icons.phone,
+                  keyboardType: TextInputType.phone,
+                  validator: f.PatternValidator(r'^[0-9]{8}$', errorText: "Téléphone invalide"),
+                ),
+                const SizedBox(height: 15),
+
+                _buildField(
+                  hint: "Âge",
+                  controller: _ageController,
+                  icon: Icons.cake_outlined,
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Âge requis";
+                    }
+                    final age = double.tryParse(value);
+                    if (age == null || age < 18 || age > 120) {
+                      return "Âge entre 18 et 120";
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 15),
+
+                _buildField(
+                  hint: "Adresse",
+                  controller: _adresseController,
+                  icon: Icons.home_outlined,
+                ),
+                const SizedBox(height: 15),
+
+                _buildField(
+                  hint: "Lien photo de profil (optionnel)",
+                  controller: _profilePictureController,
+                  icon: Icons.image_outlined,
+                ),
+                const SizedBox(height: 15),
+
+                // Choix du rôle (affectera la spécialité si coach)
                 DropdownButtonFormField<String>(
                   value: _role,
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _role = newValue!;
-                    });
+                  onChanged: (value) {
+                    setState(() => _role = value!);
                   },
-                  items: [
-                    DropdownMenuItem(
-                      value: 'Adherent',
-                      child: Text('Adhérent'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'Coach',
-                      child: Text('Coach'),
-                    ),
+                  items: const [
+                    DropdownMenuItem(value: 'ADHERENT', child: Text(" ADHERENT")),
+                    DropdownMenuItem(value: 'COACH', child: Text("COACH")),
                   ],
                   decoration: InputDecoration(
                     hintText: "Choisissez votre rôle",
-                    hintStyle: TextStyle(color: Colors.black54, fontSize: 18),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide(color: Colors.black.withOpacity(0.3)),
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 15),
 
-                // Si le rôle est "Coach", afficher le champ spécialité
-                if (_role == 'Coach')
-                  TextFormField(
+                if (_role == 'COACH')
+                  _buildField(
+                    hint: "Spécialité",
                     controller: _specialiteController,
-                    decoration: InputDecoration(
-                      hintText: "Spécialité",
-                      hintStyle: TextStyle(color: Colors.black54, fontSize: 18),
-                      prefixIcon: Icon(Icons.star_outline, color: Colors.black54),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide(color: Colors.black.withOpacity(0.3)),
-                      ),
-                    ),
-                    style: TextStyle(color: Colors.black, fontSize: 18),
-                    validator: RequiredValidator(errorText: "Spécialité requise"),
+                    icon: Icons.star_border,
+                    validator: f.RequiredValidator(errorText: "Spécialité requise"),
                   ),
-                SizedBox(height: 30),
+                const SizedBox(height: 25),
 
-                // Bouton d'inscription
                 SizedBox(
-                  width: 250,
+                  width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        // Code d'inscription à ajouter ici (envoi vers le backend, etc.)
-                        print("Inscription réussie");
-                         Navigator.pushReplacementNamed(context, '/RoutesPage');
-                      } else {
-                        print("Échec de l'inscription");
-                      }
-                    },
+                    onPressed: _submitForm,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color.fromARGB(255, 195, 195, 242), // Couleur bouton
-                      padding: EdgeInsets.symmetric(vertical: 20, horizontal: 80),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: const Color(0xFFC3C3F2),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    child: Text(
-                      'S\'inscrire',
-                      style: TextStyle(fontSize: 20),
-                    ),
+                    child: const Text("S'inscrire", style: TextStyle(fontSize: 18)),
                   ),
                 ),
               ],

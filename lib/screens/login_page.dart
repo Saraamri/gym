@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:form_field_validator/form_field_validator.dart';
+import 'package:gymaccess/screens/routes_page.dart';
 import 'inscription_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -143,13 +144,13 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               color: Color.fromARGB(255, 195, 195, 242),
                               borderRadius: BorderRadius.circular(15),
-                              onPressed: () {
-                                if (_formKey.currentState!.validate()) {
-                                  print("Connexion réussie");
-                                } else {
-                                  print("Échec de la connexion");
-                                }
-                              },
+                            
+                                onPressed: () {
+                          // Redirection vers la page d'inscription
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) =>RoutesPage()),
+                            );},
                             ),
                           ),
                         ],
@@ -177,7 +178,7 @@ class _LoginPageState extends State<LoginPage> {
                           // Redirection vers la page d'inscription
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => InscriptionPage()),
+                            MaterialPageRoute(builder: (context) =>InscriptionPage()),
                           );
                         },
                       ),
