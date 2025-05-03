@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:form_field_validator/form_field_validator.dart';
 import 'package:gymaccess/screens/routes_page.dart';
-import 'inscription_page.dart';
+import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -178,7 +178,7 @@ class _LoginPageState extends State<LoginPage> {
                           // Redirection vers la page d'inscription
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) =>InscriptionPage()),
+                            MaterialPageRoute(builder: (context) =>RegisterPage()),
                           );
                         },
                       ),
