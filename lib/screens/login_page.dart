@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:form_field_validator/form_field_validator.dart';
-import 'package:gymaccess/screens/routes_page.dart';
+import '../services/authservice.dart';
+import 'forgot_password.dart';
 import 'register_page.dart';
+import 'routes_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,24 +14,65 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  late TextEditingController _emailController;
+  late TextEditingController _usernameController;
   late TextEditingController _passwordController;
   late GlobalKey<FormState> _formKey;
   bool _isObscure = true;
+  bool _isLoading = false;
+  final AuthService _authService = AuthService();
+
+  String? _usernameError;
+  String? _passwordError;
 
   @override
   void initState() {
     super.initState();
-    _emailController = TextEditingController();
+    _usernameController = TextEditingController();
     _passwordController = TextEditingController();
     _formKey = GlobalKey<FormState>();
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+        _usernameError = null;
+        _passwordError = null;
+      });
+
+      try {
+        await _authService.login(
+          _usernameController.text.trim(),
+          _passwordController.text,
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => RoutesPage()),
+        );
+      } catch (e) {
+        final errorMsg = e.toString().replaceAll('Exception:', '').trim();
+        setState(() {
+          if (errorMsg.contains("Nom d'utilisateur")) {
+            _usernameError = errorMsg;
+          } else if (errorMsg.contains("Mot de passe")) {
+            _passwordError = errorMsg;
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(errorMsg)),
+            );
+          }
+        });
+      } finally {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -39,20 +82,12 @@ class _LoginPageState extends State<LoginPage> {
         body: Stack(
           fit: StackFit.expand,
           children: [
-          
-           
-
-            // Fond semi-transparent
-            Container(
-              color: Colors.black.withOpacity(0.5),
-            ),
-
-            // Contenu du formulaire
+            Container(color: Colors.black.withOpacity(0.5)),
             Padding(
               padding: EdgeInsets.all(16),
               child: Column(
                 children: [
-                  SizedBox(height: 100), // Espacement en haut
+                  SizedBox(height: 100),
                   SingleChildScrollView(
                     child: Form(
                       key: _formKey,
@@ -60,52 +95,26 @@ class _LoginPageState extends State<LoginPage> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           TextFormField(
-                            controller: _emailController,
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: Colors.white.withOpacity(0.8),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(15),
-                                borderSide: BorderSide.none,
-                              ),
-                              hintText: "Adresse email",
-                              hintStyle: TextStyle(color: Colors.black54, fontSize: 18),
-                              prefixIcon: Icon(Icons.email_outlined, color: Colors.black54),
+                            controller: _usernameController,
+                            decoration: _inputDecoration("Nom d'utilisateur", Icons.person_outline).copyWith(
+                              errorText: _usernameError,
                             ),
                             style: TextStyle(color: Colors.black, fontSize: 18),
-                            validator: MultiValidator([
-                              RequiredValidator(errorText: "Email requis"),
-                              PatternValidator(
-                                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                                errorText: "Entrez un email valide",
-                              ),
-                            ]),
+                            validator: RequiredValidator(errorText: "Nom d'utilisateur requis"),
                           ),
                           SizedBox(height: 20),
                           TextFormField(
                             controller: _passwordController,
                             obscureText: _isObscure,
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: Colors.white.withOpacity(0.8),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(15),
-                                borderSide: BorderSide.none,
-                              ),
-                              hintText: "Mot de passe",
-                              hintStyle: TextStyle(color: Colors.black54, fontSize: 18),
-                              prefixIcon: Icon(Icons.lock_outline, color: Colors.black54),
+                            decoration: _inputDecoration("Mot de passe", Icons.lock_outline).copyWith(
                               suffixIcon: IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _isObscure = !_isObscure;
-                                  });
-                                },
+                                onPressed: () => setState(() => _isObscure = !_isObscure),
                                 icon: Icon(
                                   _isObscure ? CupertinoIcons.eye_slash : CupertinoIcons.eye,
                                   color: Colors.black54,
                                 ),
                               ),
+                              errorText: _passwordError,
                             ),
                             style: TextStyle(color: Colors.black, fontSize: 18),
                             validator: MultiValidator([
@@ -118,16 +127,13 @@ class _LoginPageState extends State<LoginPage> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
-                              onPressed: () {
-                                print("Mot de passe oublié cliqué");
-                              },
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => ForgotPasswordPage()),
+                              ),
                               child: Text(
                                 "Mot de passe oublié?",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
@@ -135,22 +141,12 @@ class _LoginPageState extends State<LoginPage> {
                           SizedBox(
                             width: 250,
                             child: CupertinoButton(
-                              child: Text(
-                                "Se Connecter",
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18),
-                              ),
+                              child: _isLoading
+                                  ? CupertinoActivityIndicator()
+                                  : Text("Se Connecter", style: TextStyle(fontWeight: FontWeight.bold)),
                               color: Color.fromARGB(255, 195, 195, 242),
                               borderRadius: BorderRadius.circular(15),
-                            
-                                onPressed: () {
-                          // Redirection vers la page d'inscription
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) =>RoutesPage()),
-                            );},
+                              onPressed: _handleLogin,
                             ),
                           ),
                         ],
@@ -161,26 +157,13 @@ class _LoginPageState extends State<LoginPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        "Pas encore de compte?",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
+                      Text("Pas encore de compte?", style: TextStyle(color: Colors.white)),
                       TextButton(
-                        child: Text(
-                          'Inscrivez-vous',
-                          style: TextStyle(fontSize: 16, color: Colors.blueAccent),
+                        child: Text('Inscrivez-vous', style: TextStyle(color: Colors.blueAccent)),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => RegisterPage()),
                         ),
-                        onPressed: () {
-                          // Redirection vers la page d'inscription
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) =>RegisterPage()),
-                          );
-                        },
                       ),
                     ],
                   ),
@@ -191,6 +174,17 @@ class _LoginPageState extends State<LoginPage> {
           ],
         ),
       ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint, IconData icon) {
+    return InputDecoration(
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.8),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+      hintText: hint,
+      hintStyle: TextStyle(color: Colors.black54, fontSize: 18),
+      prefixIcon: Icon(icon, color: Colors.black54),
     );
   }
 }

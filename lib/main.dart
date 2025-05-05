@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'GymAccess',
-      home: RegisterPage(),
+      home: AdminDashboard(),
       routes: {
         '/LoginPage': (context) => const LoginPage(),
         '/RoutesPage':(context) => const RoutesPage(),

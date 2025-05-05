@@ -23,7 +23,10 @@ class AuthService {
       await storeToken(authResponse.token);
       return authResponse;
     } else {
-      throw Exception("Failed to login");
+          final data = json.decode(response.body);
+  String errorMessage = data['message'] ?? data['error'] ?? 'Erreur inconnue';
+
+      throw Exception(errorMessage);
     }
   }
 
@@ -39,12 +42,12 @@ class AuthService {
 class AuthResponse {
   final String token;
   final String username;
-  final int expiresAt;
+  final int? expiresAt;
 
   AuthResponse({
     required this.token,
     required this.username,
-    required this.expiresAt,
+     this.expiresAt,
   });
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) {

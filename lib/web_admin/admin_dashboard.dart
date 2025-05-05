@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:gymaccess/web_admin/admin_cours_page.dart';
 import 'abonnement_list_page.dart';
-// import 'user_list_page.dart'; // Décommentez si vous avez une page pour gérer les utilisateurs
+ import 'user_list_page.dart'; 
 
 class AdminDashboard extends StatelessWidget {
   @override
@@ -34,11 +35,10 @@ class AdminDashboard extends StatelessWidget {
             ListTile(
               title: Text('Gestion des Utilisateurs'),
               onTap: () {
-                // Décommentez la ligne ci-dessous et implémentez une page de gestion des utilisateurs
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(builder: (context) => UserListPage()),
-                // );
+                 Navigator.push(
+                  context,
+                 MaterialPageRoute(builder: (context) => UserListPage()),
+                 );
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Page de gestion des utilisateurs à implémenter')),
                 );
@@ -47,7 +47,10 @@ class AdminDashboard extends StatelessWidget {
             ListTile(
               title: Text('Gestion des Cours'),
               onTap: () {
-                // Ajoutez ici une navigation vers la gestion des cours si nécessaire
+                 Navigator.push(
+                  context,
+                 MaterialPageRoute(builder: (context) => AdminCoursPage()),
+                 );
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Page de gestion des cours à implémenter')),
                 );
