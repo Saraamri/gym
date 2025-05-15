@@ -1,35 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:gymaccess/model/user.dart';
 import 'package:http/http.dart' as http;
-
-class User {
-  final int id;
-  final String firstName;
-  final String lastName;
-  final String email;
-  final String? profilePicture;
-  final String? role;
-
-  User({
-    required this.id,
-    required this.firstName,
-    required this.lastName,
-    required this.email,
-    this.profilePicture,
-    this.role,
-  });
-
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      id: json['id'],
-      firstName: json['firstName'],
-      lastName: json['lastName'],
-      email: json['email'],
-      profilePicture: json['profilePicture'],
-      role: json['role'],
-    );
-  }
-}
 
 class UserListPage extends StatefulWidget {
   @override

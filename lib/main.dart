@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gymaccess/screens/accueil_page.dart';
+import 'package:gymaccess/screens/routes_folder/adherent_seance_page.dart';
+import 'package:gymaccess/screens/routes_folder/coach_seance_page.dart';
 import 'package:gymaccess/screens/register_page.dart';
 import 'package:gymaccess/screens/login_page.dart';
 import 'package:gymaccess/screens/routes_page.dart';
@@ -17,9 +19,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'GymAccess',
-      home: AdminDashboard(),
+      home:LoginPage(),
       routes: {
-        '/LoginPage': (context) => const LoginPage(),
+        '/LoginPage': (context) =>  LoginPage(),
         '/RoutesPage':(context) => const RoutesPage(),
          // Déclaration correcte de la route
       },

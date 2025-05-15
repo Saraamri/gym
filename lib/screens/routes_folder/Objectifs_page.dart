@@ -1,56 +1,114 @@
 import 'package:flutter/material.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-class ObjectifsPage extends StatefulWidget {
+import '../../model/objectif.dart';
+import '../AjoutObjectifPage.dart';
+import '../EditObjectifPage.dart';
+
+class ObjectifPage extends StatefulWidget {
   @override
-  _ObjectifsPageState createState() => _ObjectifsPageState();
+  _ObjectifPageState createState() => _ObjectifPageState();
 }
 
-class _ObjectifsPageState extends State<ObjectifsPage> {
-  // Contrôleurs de texte
-  TextEditingController _weightController = TextEditingController();
-  TextEditingController _targetWeightController = TextEditingController();
-  TextEditingController _caloriesController = TextEditingController();
-  TextEditingController _workoutFrequencyController = TextEditingController();
+class _ObjectifPageState extends State<ObjectifPage> {
+  List<Objectif> objectifs = [];
+  String role = '';
+  int userId = 0;
+  String token = '';
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey();
 
-  // Valeurs des objectifs
-  double _currentWeight = 0.0;
-  double _targetWeight = 0.0;
-  double _calories = 0.0;
-  String _workoutFrequency = '';
-
-  // Form Key pour validation
-  final _formKey = GlobalKey<FormState>();
-
-  bool _isUpdating = false;  // Indicateur pour savoir si on est en mode de mise à jour
-
-  // Fonction de validation des champs
-  bool _validateInputs() {
-    return _formKey.currentState?.validate() ?? false;
+  @override
+  void initState() {
+    super.initState();
+    initData();
   }
 
-  void _saveGoals() {
-    if (_validateInputs()) {
-      setState(() {
-        _currentWeight = double.tryParse(_weightController.text) ?? 0.0;
-        _targetWeight = double.tryParse(_targetWeightController.text) ?? 0.0;
-        _calories = double.tryParse(_caloriesController.text) ?? 0.0;
-        _workoutFrequency = _workoutFrequencyController.text;
-        _isUpdating = false; // Quitter le mode mise à jour après l'enregistrement
-      });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Objectifs enregistrés")));
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Veuillez remplir correctement tous les champs")));
+  Future<void> initData() async {
+    await loadUserData();
+    await fetchObjectifs();
+  }
+
+  Future<void> loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    token = prefs.getString('token') ?? '';
+
+    if (token.isNotEmpty) {
+      final payload = JwtDecoder.decode(token);
+      role = payload['role'] ?? '';
+      userId = payload['id'];
+      print('Utilisateur connecté - ID: $userId, Rôle: $role');
     }
   }
 
-  void _startUpdate() {
-    setState(() {
-      _isUpdating = true;  // Passer en mode de mise à jour
-      _weightController.text = _currentWeight.toString();
-      _targetWeightController.text = _targetWeight.toString();
-      _caloriesController.text = _calories.toString();
-      _workoutFrequencyController.text = _workoutFrequency;
+  Future<void> fetchObjectifs() async {
+    final url = role == 'COACH'
+        ? Uri.parse('http://localhost:8081/api/objectif/all')
+        : Uri.parse('http://localhost:8081/api/objectif/$userId');
+
+    final response = await http.get(url, headers: {
+      'Content-Type': 'application/json',
     });
+
+    if (response.statusCode == 200) {
+      final List decoded = json.decode(utf8.decode(response.bodyBytes));
+      final fetched = decoded.map((json) => Objectif.fromJson(json)).toList();
+
+      setState(() {
+        objectifs = [];
+      });
+
+      for (var i = 0; i < fetched.length; i++) {
+        await Future.delayed(Duration(milliseconds: 100));
+        setState(() {
+          objectifs.add(fetched[i]);
+          _listKey.currentState?.insertItem(objectifs.length - 1);
+        });
+      }
+    } else {
+      print('Erreur de chargement: ${response.statusCode}');
+    }
+  }
+
+  Future<void> deleteObjectif(int index) async {
+    final id = objectifs[index].id;
+    final response = await http.delete(
+      Uri.parse('http://localhost:8081/api/objectif/$id'),
+    );
+
+    if (response.statusCode == 200) {
+      final removed = objectifs[index];
+      _listKey.currentState?.removeItem(
+        index,
+        (context, animation) => buildAnimatedCard(removed, animation),
+        duration: Duration(milliseconds: 300),
+      );
+      setState(() {
+        objectifs.removeAt(index);
+      });
+    } else {
+      print('Erreur de suppression');
+    }
+  }
+
+  void navigateToAjout() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => AjoutObjectifPage()),
+    );
+    objectifs.clear();
+    fetchObjectifs();
+  }
+
+  void navigateToEdit(Objectif objectif) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => EditObjectifPage(objectif: objectif)),
+    );
+    objectifs.clear();
+    fetchObjectifs();
   }
 
   @override
@@ -58,109 +116,100 @@ class _ObjectifsPageState extends State<ObjectifsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Mes Objectifs"),
+      
       ),
-      body: Padding(
+          floatingActionButton: role == 'ADHERENT'
+        ? FloatingActionButton(
+            onPressed: navigateToAjout,
+            backgroundColor: Colors.purpleAccent,
+            child: Icon(Icons.add, size: 32, color: Colors.white),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+             ),
+          )
+        : null,
+    floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,   
+      body: objectifs.isEmpty
+          ? Center(child: Text("Aucun objectif trouvé."))
+          : AnimatedList(
+              key: _listKey,
+              initialItemCount: objectifs.length,
+              itemBuilder: (context, index, animation) {
+                return buildAnimatedCard(objectifs[index], animation, index: index);
+              },
+            ),
+    );
+  }
+
+  Widget buildAnimatedCard(Objectif obj, Animation<double> animation, {int? index}) {
+    return SizeTransition(
+      sizeFactor: animation,
+      child: objectifCard(obj, index),
+    );
+  }
+
+  Widget objectifCard(Objectif obj, int? index) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      margin: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,  // Utilisation du formulaire avec validation
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("Poids actuel (kg)"),
-              TextFormField(
-                controller: _weightController,
-                decoration: InputDecoration(hintText: "Entrez votre poids actuel (kg)"),
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Veuillez entrer votre poids actuel';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Veuillez entrer un nombre valide pour le poids';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 10),
-              Text("Poids cible (kg)"),
-              TextFormField(
-                controller: _targetWeightController,
-                decoration: InputDecoration(hintText: "Entrez votre objectif de poids (kg)"),
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Veuillez entrer votre poids cible';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Veuillez entrer un nombre valide pour le poids cible';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 10),
-              Text("Calories quotidiennes"),
-              TextFormField(
-                controller: _caloriesController,
-                decoration: InputDecoration(hintText: "Calories à consommer par jour"),
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Veuillez entrer le nombre de calories';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Veuillez entrer un nombre valide pour les calories';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 10),
-              Text("Fréquence des entraînements"),
-              TextFormField(
-                controller: _workoutFrequencyController,
-                decoration: InputDecoration(hintText: "Exemple: 3 séances par semaine"),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Veuillez entrer la fréquence des entraînements';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _saveGoals,
-                child: Text(_isUpdating ? "Mettre à jour mes objectifs" : "Enregistrer mes objectifs"),
-              ),
-              SizedBox(height: 30),
-              _buildCurrentGoals(),
-            ],
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.flag, color: Colors.blueAccent),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    obj.type,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                if (role == 'ADHERENT')
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.edit, color: Colors.orange),
+                        onPressed: () => navigateToEdit(obj),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete, color: Colors.red),
+                        onPressed: () {
+                          if (index != null) deleteObjectif(index);
+                        },
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+            SizedBox(height: 12),
+            infoRow(Icons.monitor_weight, 'Poids cible', '${obj.poidsCible} kg'),
+            infoRow(Icons.height, 'Taille cible', '${obj.tailleCible} cm'),
+            infoRow(Icons.fitness_center, 'IMC cible', '${obj.imcCible}'),
+            infoRow(Icons.water_drop, 'Graisse corporelle', '${obj.bodyFatPercentageCible} %'),
+            infoRow(Icons.accessibility_new, 'Masse musculaire', '${obj.muscleMassCible} kg'),
+            infoRow(Icons.calendar_today, 'Fréquence / semaine', '${obj.frequency}'),
+            infoRow(Icons.date_range, 'Date cible', '${obj.targetDate}'),
+          ],
         ),
       ),
     );
   }
 
-  // Affichage des objectifs enregistrés
-  Widget _buildCurrentGoals() {
-    if (_currentWeight == 0.0 || _targetWeight == 0.0 || _calories == 0.0 || _workoutFrequency.isEmpty) {
-      return Container(); // Si aucun objectif n'est encore enregistré
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("Objectifs enregistrés :",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        SizedBox(height: 10),
-        Text("Poids actuel : $_currentWeight kg"),
-        Text("Poids cible : $_targetWeight kg"),
-        Text("Calories quotidiennes : $_calories kcal"),
-        Text("Fréquence des entraînements : $_workoutFrequency"),
-        SizedBox(height: 20),
-        ElevatedButton(
-          onPressed: _startUpdate,
-          child: Text("Mettre à jour mes objectifs"),
-        ),
-      ],
+  Widget infoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: Colors.grey[600]),
+          SizedBox(width: 8),
+          Text("$label: ", style: TextStyle(fontWeight: FontWeight.w600)),
+          Expanded(child: Text(value)),
+        ],
+      ),
     );
   }
 }
