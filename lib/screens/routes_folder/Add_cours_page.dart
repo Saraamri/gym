@@ -6,7 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 class AddCoursPage extends StatefulWidget {
   @override
   _AddCoursPageState createState() => _AddCoursPageState();
@@ -14,7 +14,8 @@ class AddCoursPage extends StatefulWidget {
 
 class _AddCoursPageState extends State<AddCoursPage> {
   final _formKey = GlobalKey<FormState>();
-
+  int? _coachId;
+  
   final _nomController = TextEditingController();
   final _descController = TextEditingController();
   final _dureeController = TextEditingController();
@@ -29,6 +30,28 @@ class _AddCoursPageState extends State<AddCoursPage> {
   final List<String> _joursDisponibles = [
     'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'
   ];
+   @override
+  void initState() {
+    super.initState();
+    _loadCoachId();
+  }
+
+  Future<void> _loadCoachId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null) return;
+
+    try {
+      final payload = json.decode(
+        utf8.decode(base64Url.decode(base64Url.normalize(token.split(".")[1]))));
+      setState(() {
+        _coachId = payload['id'];
+      });
+    } catch (e) {
+      // gérer erreur decode
+      print("Erreur décodage token: $e");
+    }
+  }
 
   // Méthode pour choisir une image
   Future<void> _pickImage() async {
@@ -47,15 +70,20 @@ class _AddCoursPageState extends State<AddCoursPage> {
 
   // Méthode pour soumettre le formulaire
   Future<void> _submitForm() async {
+
     if (!_formKey.currentState!.validate() ||
         _imageBytes == null ||
         _selectedJours.isEmpty ||
-        _selectedNiveau == null) {
+        _selectedNiveau == null || _coachId == null ) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Veuillez remplir tous les champs requis')),
       );
       return;
     }
+
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
 
     try {
       final uri = Uri.parse('http://127.0.0.1:8081/api/coursCollectifs/add');
@@ -68,6 +96,8 @@ class _AddCoursPageState extends State<AddCoursPage> {
         "niveau": _selectedNiveau,
         "jours": _selectedJours, // Envoi des jours comme liste
         "horaire": _horaireController.text,
+           "coach": {"id": _coachId}
+      
       };
 
       // Ajoute la partie JSON comme MultipartFile

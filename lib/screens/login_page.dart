@@ -4,7 +4,7 @@ import 'package:form_field_validator/form_field_validator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/authservice.dart';
 
-import 'forgot_password.dart';
+import 'request_rest_page.dart';
 import 'routes_page.dart';
 
 import 'register_page.dart';
@@ -192,7 +192,7 @@ class _LoginPageState extends State<LoginPage> {
                           child: TextButton(
                             onPressed: () => Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => ForgotPasswordPage()),
+                              MaterialPageRoute(builder: (context) => RequestResetPage()),
                             ),
                             child: Text(
                               "Mot de passe oublié?",

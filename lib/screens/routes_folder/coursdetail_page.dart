@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:jwt_decode/jwt_decode.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CoursDetailPage extends StatefulWidget {
   final dynamic item;
 
-  const CoursDetailPage({Key? key, required this.item}) : super(key: key);
+  const CoursDetailPage({Key? key, this.item}) : super(key: key);
 
   @override
   _CoursDetailPageState createState() => _CoursDetailPageState();
@@ -13,6 +15,64 @@ class CoursDetailPage extends StatefulWidget {
 
 class _CoursDetailPageState extends State<CoursDetailPage> {
   bool isLoading = false;
+  String? role;
+  int? userId;
+  int? coursId;
+
+  @override
+  void initState() {
+    super.initState();
+    coursId = widget.item['id']; // Récupération du coursId
+    _loadUserFromToken();
+    print("ID du cours : $coursId");
+  }
+
+  Future<void> _loadUserFromToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token != null) {
+      Map<String, dynamic> payload = Jwt.parseJwt(token);
+      setState(() {
+        role = payload['role'];
+        userId = payload['id'];
+        print("Utilisateur ID: $userId, Rôle: $role");
+      });
+    } else {
+      print("Token introuvable.");
+    }
+  }
+
+  Future<void> _reserverCours() async {
+    if (userId == null || coursId == null) {
+      print("Erreur : userId ou coursId est null");
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    final url = Uri.parse(
+        'http://127.0.0.1:8081/api/reservations/reservercours?adherentId=$userId&coursId=$coursId');
+
+    final response = await http.post(url);
+
+    setState(() {
+      isLoading = false;
+    });
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Réservation réussie')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erreur de réservation')),
+      );
+      print("Réponse d'erreur: ${response.body}");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,8 +82,7 @@ class _CoursDetailPageState extends State<CoursDetailPage> {
       appBar: AppBar(title: Text(item['nom'])),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
           children: [
             item['image'] != null
                 ? Image.network(
@@ -31,24 +90,19 @@ class _CoursDetailPageState extends State<CoursDetailPage> {
                     width: double.infinity,
                     height: 200,
                     fit: BoxFit.cover,
-                    loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
-                      if (loadingProgress == null) {
-                        return child;
-                      } else {
-                        return Center(
-                          child: CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded /
-                                    (loadingProgress.expectedTotalBytes ?? 1)
-                                : null,
-                          ),
-                        );
-                      }
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  (loadingProgress.expectedTotalBytes ?? 1)
+                              : null,
+                        ),
+                      );
                     },
                     errorBuilder: (context, error, stackTrace) {
-                      return Center(
-                        child: Icon(Icons.error, size: 50),
-                      );
+                      return const Center(child: Icon(Icons.error, size: 50));
                     },
                   )
                 : const Icon(Icons.image),
@@ -68,42 +122,34 @@ class _CoursDetailPageState extends State<CoursDetailPage> {
             const SizedBox(height: 8),
             Text('Horaire: ${item['horaire']}'),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: isLoading
-                  ? null
-                  : () async {
-                      setState(() {
-                        isLoading = true;
-                      });
 
-                      final url = 'http://127.0.0.1:8081/api/reservation'; // Remplacez par votre URL de réservation
-                      final response = await http.post(
-                        Uri.parse(url),
-                        body: json.encode({
-                          'coursId': item['id'], // ID du cours à réserver
-                          'userId': 'userId', // ID de l'utilisateur qui réserve
-                        }),
-                        headers: {'Content-Type': 'application/json'},
-                      );
-
-                      setState(() {
-                        isLoading = false;
-                      });
-
-                      if (response.statusCode == 200) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Réservation réussie')),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Erreur de réservation')),
-                        );
-                      }
-                    },
-              child: isLoading
-                  ? const CircularProgressIndicator()
-                  : const Text('Réserver'),
-            ),
+            // Bouton visible uniquement pour les adhérents
+            if (role == 'ADHERENT')
+              ElevatedButton(
+                onPressed: isLoading ? null : _reserverCours,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[800],
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  textStyle: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text('Réserver'),
+              ),
           ],
         ),
       ),

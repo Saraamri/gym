@@ -118,6 +118,7 @@ class _RoutesPageState extends State<RoutesPage> {
                 decoration: const BoxDecoration(color: Colors.grey),
               ),
             ),
+            if (_role == 'ADHERENT') 
             ListTile(
               leading: const Icon(Icons.fitness_center),
               title: const Text("Abonnements"),
@@ -136,7 +137,7 @@ class _RoutesPageState extends State<RoutesPage> {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ReservationPage()),
+                  MaterialPageRoute(builder: (context) => const  ReservationsPage()),
                 );
               },
             ),
@@ -180,8 +181,8 @@ class _RoutesPageState extends State<RoutesPage> {
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.black,
-        selectedItemColor: Colors.white,
+        backgroundColor: Colors.white,
+        selectedItemColor: Colors.black,
         unselectedItemColor: Colors.grey,
         showSelectedLabels: true,
         showUnselectedLabels: true,
@@ -191,7 +192,7 @@ class _RoutesPageState extends State<RoutesPage> {
             label: "Cours",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
+            icon: Icon(Icons.self_improvement),
             label: "Séances",
           ),
           BottomNavigationBarItem(
