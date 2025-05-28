@@ -6,7 +6,6 @@ import '../services/authservice.dart';
 
 import 'request_rest_page.dart';
 import 'routes_page.dart';
-
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -48,13 +47,11 @@ class _LoginPageState extends State<LoginPage> {
         _passwordError = null;
       });
 
-      print("Tentative de connexion...");
       try {
         final response = await _authService.login(
           _usernameController.text.trim(),
           _passwordController.text,
         );
-        print("Réponse reçue après connexion: $response");
 
         await saveUserData(
           response.token,
@@ -63,7 +60,6 @@ class _LoginPageState extends State<LoginPage> {
           response.role,
           response.expiresAt,
         );
-        print("Données utilisateur enregistrées avec succès");
 
         Navigator.pushReplacement(
           context,
@@ -71,8 +67,6 @@ class _LoginPageState extends State<LoginPage> {
         );
       } catch (e) {
         final errorMsg = e.toString().replaceAll('Exception:', '').trim();
-        print("Erreur pendant la connexion: $errorMsg");
-
         setState(() {
           if (errorMsg.contains("Nom d'utilisateur")) {
             _usernameError = errorMsg;
@@ -91,37 +85,18 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> saveUserData(String token, String username, String email, String role, int? expiresAt) async {
-    print("Enregistrement des données utilisateur...");
     final prefs = await SharedPreferences.getInstance();
-
-    print("Stockage du token...");
     await prefs.setString('token', token);
-
-    print("Stockage du nom d'utilisateur...");
     await prefs.setString('username', username);
-
-    print("Stockage de l'email...");
     await prefs.setString('email', email);
-
-    print("Stockage du rôle...");
     await prefs.setString('role', role);
-
-    // Stockage de expiresAt avec un contrôle pour éviter les erreurs
-    if (expiresAt != null) {
-      print("Stockage de expiresAt: $expiresAt");
-      await prefs.setInt('expiresAt', expiresAt);
-    } else {
-      print("expiresAt est null, stockage avec valeur par défaut 0");
-      await prefs.setInt('expiresAt', 0);
-    }
-
-    print("Données utilisateur enregistrées avec succès");
+    await prefs.setInt('expiresAt', expiresAt ?? 0);
   }
 
   InputDecoration _inputDecoration(String hintText, IconData icon) {
     return InputDecoration(
       filled: true,
-      fillColor: Colors.white,
+      fillColor: Colors.grey[200],
       hintText: hintText,
       hintStyle: TextStyle(color: Colors.black54),
       prefixIcon: Icon(icon, color: Colors.black54),
@@ -147,12 +122,22 @@ class _LoginPageState extends State<LoginPage> {
         body: Stack(
           fit: StackFit.expand,
           children: [
-            Container(color: Colors.black.withOpacity(0.5)),
+            Container(color: Colors.white),
             SingleChildScrollView(
               padding: EdgeInsets.all(16),
               child: Column(
                 children: [
-                  SizedBox(height: 100),
+                  SizedBox(height: 60),
+                  Text(
+                    "Connexion",
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 40),
                   Form(
                     key: _formKey,
                     child: Column(
@@ -180,7 +165,7 @@ class _LoginPageState extends State<LoginPage> {
                             errorText: _passwordError,
                           ),
                           style: TextStyle(color: Colors.black, fontSize: 18),
-                          validator: MultiValidator([ 
+                          validator: MultiValidator([
                             RequiredValidator(errorText: 'Mot de passe requis'),
                             MinLengthValidator(8, errorText: 'Minimum 8 caractères'),
                             MaxLengthValidator(15, errorText: 'Maximum 15 caractères'),
@@ -196,7 +181,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             child: Text(
                               "Mot de passe oublié?",
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ),
@@ -220,7 +205,7 @@ class _LoginPageState extends State<LoginPage> {
                     alignment: WrapAlignment.center,
                     spacing: 8,
                     children: [
-                      Text("Pas encore de compte?", style: TextStyle(color: Colors.white)),
+                      Text("Pas encore de compte?", style: TextStyle(color: Colors.black)),
                       TextButton(
                         child: Text('Inscrivez-vous', style: TextStyle(color: Colors.blueAccent)),
                         onPressed: () => Navigator.push(

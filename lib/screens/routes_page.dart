@@ -1,15 +1,19 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:jwt_decode/jwt_decode.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+
 import 'package:gymaccess/screens/routes_folder/Objectifs_page.dart';
 import 'package:gymaccess/screens/routes_folder/cours_page.dart';
-import 'package:gymaccess/screens/routes_folder/performance_page.dart';
+import 'package:gymaccess/screens/routes_folder/progress_page.dart';
 import 'package:gymaccess/screens/routes_folder/reservations_page.dart';
-import 'package:gymaccess/screens/routes_folder/profile_page.dart';
 import 'package:gymaccess/screens/routes_folder/abonnements_page.dart';
 import 'package:gymaccess/screens/routes_folder/settings_page.dart';
 import 'package:gymaccess/screens/routes_folder/adherent_seance_page.dart';
 import 'package:gymaccess/screens/routes_folder/coach_seance_page.dart';
+
+import 'routes_folder/calendar_page.dart';
 
 class RoutesPage extends StatefulWidget {
   const RoutesPage({super.key});
@@ -20,13 +24,16 @@ class RoutesPage extends StatefulWidget {
 
 class _RoutesPageState extends State<RoutesPage> {
   late List<Widget> _screens;
-  final List<String> _titles = ["Cours", "Séances", "Profil", "Performances"];
-  int _selectedIndex = 2;
+  final List<String> _titles = ["Cours", "Séances","Rendez-vous", "Performances"];
+  int _selectedIndex = 1;
 
   String _role = '';
   String _username = '';
   String _email = '';
   bool _isLoading = true;
+  String? _profilePictureUrl;
+
+  final String baseUrl = 'http://127.0.0.1:8081/api';
 
   @override
   void initState() {
@@ -36,54 +43,73 @@ class _RoutesPageState extends State<RoutesPage> {
 
   Future<void> _loadUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    
     String token = prefs.getString('token') ?? '';
-    
+
     if (token.isEmpty) {
-      // Redirection vers la page de login si pas de token
       if (context.mounted) {
         Navigator.pushReplacementNamed(context, '/login');
       }
       return;
     }
 
-    // Décodage du token JWT pour obtenir le rôle
-   Map<String, dynamic> payload = Jwt.parseJwt(token); 
+    // Décoder le token
+    Map<String, dynamic> payload = Jwt.parseJwt(token);
 
     String role = payload['role'] ?? '';
+    int userId = payload['id'] ?? 0;
 
-    String username = prefs.getString('username') ?? '';
-    String email = prefs.getString('email') ?? '';
-    String adherentId = prefs.getString('Id') ?? '';
-
-    // Vérifie que l'ID de l'adhérent est valide
-    int adherentIdInt = int.tryParse(adherentId) ?? 0;
-
-    // Gère les erreurs si le rôle est inconnu
-    if (role.isEmpty) {
-      // Affiche un message d'erreur ou redirige vers la page de login si rôle invalide
+    if (role.isEmpty || userId == 0) {
       if (context.mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
+        Navigator.pushReplacementNamed(context, '/LoginPage');
       }
       return;
     }
 
-    setState(() {
-      _role = role;
-      _username = username;
-      _email = email;
+    // Récupérer infos utilisateur via API
+    try {
+      final url = Uri.parse('$baseUrl/user/$userId');
+      final response = await http.get(url, headers: {
+       
+      });
 
-      // Charge les pages en fonction du rôle
-      _screens = [
-        const CoursPage(),
-        role == 'COACH'
-            ? const CoachSeancesPage() // Page spécifique au coach
-            : AdherentSeancesPage(), // Page spécifique à l'adhérent
-        ProfilePage(),
-        const PerformancePage(),
-      ];
-      _isLoading = false;
-    });
+      if (response.statusCode == 200) {
+        final userData = jsonDecode(response.body);
+
+        setState(() {
+          _role = role;
+          _username = userData['username'] ?? '';
+          _email = userData['email'] ?? '';
+
+          String? profilePicPath = userData['profilePicture'];
+          if (profilePicPath != null && profilePicPath.isNotEmpty) {
+            _profilePictureUrl = '$baseUrl$profilePicPath';
+          } else {
+            _profilePictureUrl = null;
+          }
+
+          _screens = [
+            const CoursPage(),
+            role == 'COACH'
+                ? const CoachSeancesPage()
+                : AdherentSeancesPage(),
+            CalendarPage(),
+             ProgressPage(),
+          ];
+
+          _isLoading = false;
+        });
+      } else {
+      
+        if (context.mounted) {
+          Navigator.pushReplacementNamed(context, '/LoginPage');
+        }
+      }
+    } catch (e) {
+      
+      if (context.mounted) {
+        Navigator.pushReplacementNamed(context, '/LoginPage');
+      }
+    }
   }
 
   void _onItemTapped(int index) {
@@ -111,25 +137,32 @@ class _RoutesPageState extends State<RoutesPage> {
             DrawerHeader(
               decoration: const BoxDecoration(color: Colors.blueGrey),
               child: UserAccountsDrawerHeader(
-                accountName: Text(_username),
+
+                accountName: Padding(
+    padding: const EdgeInsets.only(left: 8.0), 
+    child: Text(_username),
+  ),
                 accountEmail: Text(_email),
-                currentAccountPicture: const CircleAvatar(), // Ajoute image ici si souhaité
-                currentAccountPictureSize: const Size.square(50),
+                currentAccountPicture: _profilePictureUrl != null
+                    ? CircleAvatar(
+                        backgroundImage: NetworkImage(_profilePictureUrl!),
+                      )
+                    : const CircleAvatar(child: Icon(Icons.person)),
                 decoration: const BoxDecoration(color: Colors.grey),
               ),
             ),
-            if (_role == 'ADHERENT') 
-            ListTile(
-              leading: const Icon(Icons.fitness_center),
-              title: const Text("Abonnements"),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AbonnementPage()),
-                );
-              },
-            ),
+            if (_role == 'ADHERENT')
+              ListTile(
+                leading: const Icon(Icons.fitness_center),
+                title: const Text("Abonnements"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AbonnementPage()),
+                  );
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.schedule),
               title: const Text("Mes Réservations"),
@@ -137,7 +170,7 @@ class _RoutesPageState extends State<RoutesPage> {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const  ReservationsPage()),
+                  MaterialPageRoute(builder: (context) => const ReservationsPage()),
                 );
               },
             ),
@@ -163,18 +196,7 @@ class _RoutesPageState extends State<RoutesPage> {
                 );
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text("Déconnexion"),
-              onTap: () async {
-                SharedPreferences prefs = await SharedPreferences.getInstance();
-                await prefs.clear(); // Déconnexion simple
-                // Redirection vers la page de login
-                if (context.mounted) {
-                  Navigator.pushReplacementNamed(context, '/login');
-                }
-              },
-            ),
+          
           ],
         ),
       ),
@@ -195,13 +217,13 @@ class _RoutesPageState extends State<RoutesPage> {
             icon: Icon(Icons.self_improvement),
             label: "Séances",
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "Profil",
+            BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: "Rendez_vous",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.bar_chart),
-            label: "Performances",
+            label: "Progress",
           ),
         ],
         onTap: _onItemTapped,

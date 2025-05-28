@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gymaccess/web_admin/admin_dashboard.dart';
 
-
 class AdminLogin extends StatefulWidget {
-  
   const AdminLogin({super.key});
 
   @override
@@ -22,11 +20,10 @@ class _LoginPageState extends State<AdminLogin> {
       String email = _emailController.text;
       String password = _passwordController.text;
 
-      // Simuler une vérification des identifiants (remplacer avec une API plus tard)
-      if (email == "admin@gmail.com" && password == "admin123") {
+      if (email == "admin@gmail.com" && password == "Admin@123") {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) =>  AdminDashboard()),
+          MaterialPageRoute(builder: (context) => AdminDashboard()),
         );
       } else {
         setState(() {
@@ -39,120 +36,120 @@ class _LoginPageState extends State<AdminLogin> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blueGrey[900],
+      backgroundColor: Colors.white, // fond de la page blanc
       body: Center(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
-          child: Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-            elevation: 5,
-            color: Colors.blueGrey[800],
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Titre
-                    Text(
-                      "Connexion Administrateur",
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Champ Email
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.blueGrey[700],
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        labelText: "Email",
-                        labelStyle: const TextStyle(color: Colors.white),
-                        prefixIcon: const Icon(Icons.email, color: Colors.white),
-                      ),
-                      style: const TextStyle(color: Colors.white),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return "Veuillez entrer un email";
-                        } else if (!value.contains("@")) {
-                          return "Email invalide";
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 15),
-
-                    // Champ Mot de passe
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _isObscure,
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.blueGrey[700],
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        labelText: "Mot de passe",
-                        labelStyle: const TextStyle(color: Colors.white),
-                        prefixIcon: const Icon(Icons.lock, color: Colors.white),
-                        suffixIcon: IconButton(
-                          icon: Icon(_isObscure ? Icons.visibility_off : Icons.visibility, color: Colors.white),
-                          onPressed: () {
-                            setState(() {
-                              _isObscure = !_isObscure;
-                            });
-                          },
-                        ),
-                      ),
-                      style: const TextStyle(color: Colors.white),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return "Veuillez entrer un mot de passe";
-                        } else if (value.length < 6) {
-                          return "Mot de passe trop court";
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Message d'erreur
-                    if (_errorMessage.isNotEmpty)
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400), // largeur max
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              elevation: 8,
+              color: Colors.white, // fond du formulaire blanc aussi
+              child: Padding(
+                padding: const EdgeInsets.all(25.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
                       Text(
-                        _errorMessage,
-                        style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                      ),
-                    const SizedBox(height: 20),
-
-                    // Bouton de connexion
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _login,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          backgroundColor: Colors.teal[400],
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        child: const Text(
-                          "Se connecter",
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        "Connexion Administrateur",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.teal[800],
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Mot de passe oublié
-                    TextButton(
-                      onPressed: () {
-                        print("Mot de passe oublié");
-                      },
-                      child: const Text(
-                        "Mot de passe oublié ?",
-                        style: TextStyle(color: Colors.white, fontSize: 14),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          labelText: "Email",
+                          prefixIcon: const Icon(Icons.email),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return "Veuillez entrer un email";
+                          } else if (!value.contains("@")) {
+                            return "Email invalide";
+                          }
+                          return null;
+                        },
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 15),
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _isObscure,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          labelText: "Mot de passe",
+                          prefixIcon: const Icon(Icons.lock),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isObscure
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isObscure = !_isObscure;
+                              });
+                            },
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return "Veuillez entrer un mot de passe";
+                          } else if (value.length < 6) {
+                            return "Mot de passe trop court";
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      if (_errorMessage.isNotEmpty)
+                        Text(
+                          _errorMessage,
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _login,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            backgroundColor: Colors.teal[400],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text(
+                            "Se connecter",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
