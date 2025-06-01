@@ -56,6 +56,9 @@ dependencies:
   table_calendar: ^3.0.9
   timezone: ^0.10.1
   intl: ^0.20.2
+  share_plus: ^11.0.0
+
+
  
 dev_dependencies:
   flutter_test:

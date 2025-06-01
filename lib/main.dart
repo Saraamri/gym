@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'GymAccess',
       debugShowCheckedModeBanner: false,
-      home:LoginPage(),
+      home: LoginPage(),
       routes: {
         '/LoginPage': (context) =>  LoginPage(),
         '/RoutesPage':(context) => const RoutesPage(),

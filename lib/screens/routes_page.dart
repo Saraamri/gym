@@ -52,7 +52,7 @@ class _RoutesPageState extends State<RoutesPage> {
       return;
     }
 
-    // Décoder le token
+    
     Map<String, dynamic> payload = Jwt.parseJwt(token);
 
     String role = payload['role'] ?? '';
@@ -65,7 +65,7 @@ class _RoutesPageState extends State<RoutesPage> {
       return;
     }
 
-    // Récupérer infos utilisateur via API
+   
     try {
       final url = Uri.parse('$baseUrl/user/$userId');
       final response = await http.get(url, headers: {

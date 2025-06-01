@@ -10,15 +10,25 @@ class UserListPage extends StatefulWidget {
 
 class _UserListPageState extends State<UserListPage> {
   late Future<List<User>> _usersFuture;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _usersFuture = _fetchUsers();
+
+    // Recherche dynamique : déclenche une recherche à chaque changement de texte
+    _searchController.addListener(_searchUsers);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<List<User>> _fetchUsers() async {
-    final response = await http.get(Uri.parse('http://localhost:8081/api/user/all'));
+    final response = await http.get(Uri.parse('http://127.0.0.1:8081/api/user/all'));
 
     if (response.statusCode == 200) {
       List<dynamic> data = json.decode(response.body);
@@ -26,6 +36,35 @@ class _UserListPageState extends State<UserListPage> {
     } else {
       throw Exception('Erreur lors de la récupération des utilisateurs');
     }
+  }
+
+  Future<void> _searchUsers() async {
+    String email = _searchController.text.trim();
+
+    if (email.isNotEmpty) {
+      final response = await http.get(Uri.parse('http://127.0.0.1:8081/api/user/search/email?email=$email'));
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = json.decode(response.body);
+        setState(() {
+          _usersFuture = Future.value(data.map((e) => User.fromJson(e)).toList());
+        });
+
+        if (data.isEmpty) {
+          _showError("Aucun utilisateur trouvé.");
+        }
+      } else {
+        _showError("Erreur lors de la recherche par email");
+      }
+    } else {
+      setState(() {
+        _usersFuture = _fetchUsers();
+      });
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _deleteUser(int userId) async {
@@ -48,14 +87,14 @@ class _UserListPageState extends State<UserListPage> {
     );
 
     if (confirm == true) {
-      final response = await http.delete(Uri.parse('http://localhost:8081/api/user/delete/$userId'));
+      final response = await http.delete(Uri.parse('http://127.0.0.1:8081/api/user/delete/$userId'));
       if (response.statusCode == 200) {
         setState(() {
           _usersFuture = _fetchUsers();
         });
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Utilisateur supprimé")));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur lors de la suppression")));
+        _showError("Erreur lors de la suppression");
       }
     }
   }
@@ -75,8 +114,41 @@ class _UserListPageState extends State<UserListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Liste des Utilisateurs'),
+        titleSpacing: 0,
         backgroundColor: Colors.blueAccent,
+        title: Row(
+          children: [
+            const SizedBox(width: 12),
+            const Text('Liste des Utilisateurs'),
+            const Spacer(),
+            Container(
+              width: 250,
+              height: 40,
+              margin: const EdgeInsets.symmetric(vertical: 6),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: "Rechercher par email...",
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      _searchController.clear();
+                      _searchUsers(); // recharge tous les utilisateurs
+                    },
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
+        ),
       ),
       body: FutureBuilder<List<User>>(
         future: _usersFuture,
